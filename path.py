@@ -1,0 +1,5 @@
+ROOT_PATH = r"Data"
+
+TRAIN_ROOT_PATH = f"{ROOT_PATH}/train"
+
+TEST_ROOT_PATH = f"{ROOT_PATH}/test"
