@@ -8,87 +8,8 @@ import numpy as np
 import SimpleITK as sitk
 
 
-normal_organ_name_list = ['Anal Canal', 'Bladder', 'Rectum', 'Femoral Head(L)', 'Femoral Head(R)']
-
-
-def str_part_in(sub_str, str_list, case_omit=True):
-    '''
-        对于 element in list 这样的语句, 需要 element 与 list 中的某一个 item 完全相同才输出为 True, 
-    而 part_in , 即 sub_str in list 则只需要 sub_str 与 list 中的某一个 item 满足 sub_str in item 即可。
-    输入:
-        str_list: 包含有多个 item 的 list。
-        sub_str: 需要进行 part_in 判断的字符串。
-        case_omit: 是否忽略大小写。
-    输出:
-        flag: 是否满足 str_list 与 sub_str 之间 part_in 的条件。
-    '''
-    flag = False
-    for str_ in str_list:    
-        if str_in(sub_str, str_, case_omit):
-            flag = True
-
-    return flag
-
-
-def str_in(sub_str, main_str, case_omit=True):
-    '''
-        对于只想要让 sub_str 中的所有字母按顺序在 main_str 中出现就算满足 sub_str in main_str 的情况, 
-    需要一个 str_in 函数来实现。
-    输入:
-        main_str: 主字符串。
-        sub_str: 需要判断是否满足 str_in 的字符串。
-        case_omit: 是否忽略大小写。
-    输出:
-        flag: 是否满足 main_str 和 sub_str 之间的 str_in 的条件。
-    '''
-    if case_omit:
-        main_str = main_str.upper()
-        sub_str = sub_str.upper()
-    
-    flag = False
-    main_index = 0; sub_index = 0;
-    while(main_index != len(main_str)):
-        if sub_index == len(sub_str): break
-        if main_str[main_index] == sub_str[sub_index]:
-            sub_index += 1
-        main_index += 1
-
-    if sub_index == len(sub_str): flag = True
-
-    return flag
-
-
-def Context_Max_Similar_Calculation(sub_str, main_str, case_omit=True):
-    if case_omit:
-        main_str = main_str.upper()
-        sub_str = sub_str.upper()
-
-    main_index = 0; sub_index = 0;
-    while(main_index != len(main_str)):
-        if sub_index == len(sub_str): break
-        if main_str[main_index] == sub_str[sub_index]:
-            sub_index += 1
-        main_index += 1
-
-    match_rate = sub_index/len(sub_str)
-
-    return match_rate
-
-
-def Context_Max_Similar_Selection(main_str, select_str_list, case_omit=True, conf_thresh=0.7):
-    max_match_rate = -1
-    max_match_index = -1
-    for index in range(len(select_str_list)):
-        sub_str = select_str_list[index]
-        new_match_rate = Context_Max_Similar_Calculation(sub_str, main_str, case_omit)
-        if new_match_rate > max_match_rate:
-            max_match_rate = new_match_rate
-            max_match_index = index
-
-    if max_match_rate > conf_thresh:
-        return select_str_list[max_match_index]
-    else:
-        return None
+normal_organ_name_list = ['Brain Stem', 'Eye(L)', 'Eye(R)', 'Lens(L)', 'Lens(R)', 'Optic Nerve(L)', 'Optic Nerve(R)', 'Optic Chiasma', 'Temporal Lobes(L)', 'Temporal Lobes(R)', 'Pituitary', 'Parotid Gland(L)', 'Parotid Gland(R)', \
+    'Inner Ear(L)', 'Inner Ear(R)', 'Mid Ear(L)', 'Mid Ear(R)', 'Jaw Joint(L)', 'Jaw Joint(R)', 'Spinal Cord', 'Mandible(L)', 'Mandible(R)']
 
 
 def convert_gray_to_rgb(gray_image):
@@ -278,57 +199,6 @@ def search_reverse(array, length, value, dimension):
             break  
 
     return s, e
-
-
-def convert_NiFTI_to_NRRD(NiFTI_path, NRRD_path):
-    """
-        转换为 NRRD 时的参考: http://teem.sourceforge.net/nrrd/format.html#space
-    """
-    _, nrrd_options = nrrd.read(f"{os.path.dirname(__file__)}/template.seg.nrrd")
-    array, origin, spacing = read_NiFTI(NiFTI_path)
-    raw_n, raw_r, raw_c = array.shape
-
-    z_bottom, z_top = search_reverse(array, raw_n, 0, 0)
-    y_front, y_behind = search_reverse(array, raw_r, 0, 1)
-    x_left, x_right = search_reverse(array, raw_c, 0, 2)
-
-    print("offset: z range: {:>3}, {:>3} y range: {:>3}, {:>3} x range: {:>3}, {:>3}".format(z_bottom, z_top, y_front, y_behind, x_left, x_right))
-
-    array = array[z_bottom:(z_top+1), y_front:(y_behind+1), x_left:(x_right+1)].transpose(2, 1, 0)
-    data = []
-
-    c, r, n = array.shape
-
-    for i in range(len(normal_organ_name_list)):
-        value_mask = (array == i+1).astype(np.uint8)
-        x_range = search(value_mask, c, 1, 0)
-        y_range = search(value_mask, r, 1, 1)
-        z_range = search(value_mask, n, 1, 2)
-        nrrd_options[f"Segment{i}_Extent"] = "{} {} {} {} {} {}".format(*x_range, *y_range, *z_range)
-        nrrd_options[f"Segment{i}_Name"] = normal_organ_name_list[i]
-        data.append(np.expand_dims(value_mask, axis=0))
-        print("organ {:>20} range: x range {:>3}, {:>3} y range {:>3}, {:>3} z range {:>3}, {:>3}".format(normal_organ_name_list[i], *x_range, *y_range, *z_range))
-    
-    print()
-    data = np.concatenate(data, axis=0)
-
-    nrrd_options["sizes"] = np.array(data.shape)
-
-    nrrd_options["space directions"][1][0] = spacing[0]
-    nrrd_options["space directions"][2][1] = spacing[1]
-    nrrd_options["space directions"][3][2] = spacing[2]
-
-    nrrd_options["Segmentation_ReferenceImageExtentOffset"] = "{} {} {}".format(x_left, y_front, z_bottom)
-
-    nrrd_options["space"] = "left-posterior-superior"
-    # nrrd_options["space"] = "right-anterior-superior"
-
-    origin_fixed = [origin[0]+x_left*spacing[0], origin[1]+y_front*spacing[1], origin[2]+z_bottom*spacing[2]]
-    # origin_fixed = [-1*origin[0]-x_left*spacing[0], -1*origin[1]-y_front*spacing[1], origin[2]+z_bottom*spacing[2]]
-
-    nrrd_options["space origin"] = np.array(origin_fixed)
-
-    nrrd.write(NRRD_path, data, nrrd_options)
 
 
 def list_avg(item_list):

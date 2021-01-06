@@ -22,7 +22,8 @@ class TrainRecorder(object):
         if os.path.exists(csv_record_path):
             self.csv_writer = csv.writer(open(csv_record_path, "a", newline=""))
         else:
-            head_row = ["Epoch", "Loss", "Average_DSC", "Ancal_Canal_DSC", "Bladder_DSC", "Rectum_DSC", "Femoral_Head(L)_DSC", "Femoral_Head(R)_DSC"]
+            head_row = ["Epoch", "Loss", "Average_DSC", "Brain_Stem_DSC", "Eye_L_DSC", "Eye_R_DSC", "Lens_L_DSC", "Lens_R_DSC", "Optic_Nerve_L", "Optic_Nerve_R_DSC", "Optic_Chiasma_DSC", "Temporal_Lobes_L_DSC", "Temporal_Lobes_R_DSC", "Pituitary_DSC", "Parotid_Gland_L_DSC", "Parotid_Gland_R_DSC", \
+    "Inner_Ear_L_DSC", "Inner_Ear_R_DSC", "Mid_Ear_L_DSC", "Mid_Ear_R_DSC", "Jaw_Joint_L_DSC", "Jaw_Joint_R_DSC", "Spinal_Cord_DSC", "Mandible_L_DSC", "Mandible_R_DSC"]
             self.csv_writer = csv.writer(open(csv_record_path, "w", newline=""))
             self.csv_writer.writerow(head_row)
 
@@ -35,35 +36,6 @@ class TrainRecorder(object):
         data = pd.read_csv(csv_path)
         data = data[data["Epoch"] < start_epoch]
         data.to_csv(csv_path, index=None)
-
-    def write(self, row, log_string):
-        self.csv_writer.writerow(self.row_norm(row))
-        self.txt_writer.write(log_string + "\n")
-
-    def row_norm(self, row):
-        for index in range(len(row)):
-            if isinstance(row[index], float):
-                row[index] = round(row[index], 3)
-
-        return row
-
-
-class ValidRecorder(object):
-    def __init__(self, backup_path, save_key_word, epoch, performance, loss_type):
-        self.backup_path = backup_path
-        self.save_key_word = save_key_word
-
-        csv_record_path = os.path.join(backup_path, "{}@{}_{:.3f}_{}.csv".format(save_key_word, epoch, performance, loss_type))
-        txt_record_path = os.path.join(backup_path, "{}@{}_{:.3f}_{}.txt".format(save_key_word, epoch, performance, loss_type))
-
-        if not os.path.exists(backup_path):
-            os.makedirs(backup_path, 0o777)
-
-        head_row = ["Average", "Ancal_Canal_DSC", "Bladder_DSC", "Rectum_DSC", "Femoral_Head(L)_DSC", "Femoral_Head(R)_DSC"]
-        self.csv_writer = csv.writer(open(csv_record_path, "w", newline=""))
-        self.csv_writer.writerow(head_row)
-
-        self.txt_writer = open(txt_record_path, "w")
 
     def write(self, row, log_string):
         self.csv_writer.writerow(self.row_norm(row))
