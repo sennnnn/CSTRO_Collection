@@ -171,7 +171,7 @@ if __name__ == "__main__":
     params["CUDA"] = True
     params["START_EPOCH"] = 1
     params["WARM_UP_EPOCHES"] = 1
-    params["TOTAL_EPOCHES"] = 100
+    params["TOTAL_EPOCHES"] = 1
     params["LOSS_TYPE"] = "CROSS_ENTROPY"
     params["MODEL_SELECTION"] = "unet"
     # Other settings
