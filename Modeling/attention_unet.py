@@ -1,12 +1,14 @@
 import torch
 import torch.nn as nn
 
-from Modeling import base
+import base
 
 
 class AttentionGate(nn.Module):
     def __init__(self, gate_channel, signal_channel, middle_channel=None):
         super(AttentionGate, self).__init__()
+        self.register_block_method()
+
         self.projection_gate = self.conv(0, gate_channel, middle_channel, 1, 1, True)
         self.projection_signal = self.conv(1, signal_channel, middle_channel, 1, 1, True)
         self.projection_mask = self.conv(2, middle_channel, 1, 1, 1, True)
@@ -19,6 +21,8 @@ class AttentionGate(nn.Module):
         self.upsample = base._create_upsample_block 
 
     def forward(self, gate, signal):
+        raw_signal = signal
+        
         gate = self.projection_gate(gate)
         signal = self.projection_signal(signal)
 
@@ -27,7 +31,7 @@ class AttentionGate(nn.Module):
         mask = self.projection_mask(mask)
         mask = self.sigmoid(mask)
 
-        signal = mask * signal
+        signal = mask * raw_signal
 
         return signal
 
@@ -191,3 +195,16 @@ class AttentionUNet(nn.Module):
         
         return o, o_softmax
 
+
+if __name__ == "__main__":
+    data = torch.randn((1, 1, 256, 256))
+
+    model = AttentionUNet(1, 23)
+
+    data = data.cuda()
+    model = model.cuda()
+
+    with torch.no_grad():
+        result = model(data)
+
+        print(result[1].shape)
