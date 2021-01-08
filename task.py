@@ -163,7 +163,7 @@ if __name__ == "__main__":
     params["TRANSLATE_RANGE"] = 15
     # Model settins
     params["IN_CHANNELS"] = 1
-    params["ORGAN_AMOUNT"] = 23
+    params["ORGAN_AMOUNT"] = 22
     params["BASE_CHANNELS"] = 64
     # Task settings
     params["TASK"] = "train"
