@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-import base
+from Modeling import base
 
 
 class AttentionGate(nn.Module):

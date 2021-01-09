@@ -40,10 +40,38 @@ class UNetPlusPlus(nn.Module):
         self.maxpool4 = nn.MaxPool2d(kernel_size=2, stride=2)
 
         # Upsampling
-        # self.op3_1 = ConvUnit(base_channels)
-
+        self.op0_1 = ConvUnit(base_channels+base_channels*2, base_channels)
+        self.upsample0_1 = nn.UpsamplingBilinear2d(scale_factor=2)
+        self.op1_1 = ConvUnit(base_channels*2+base_channels*4, base_channels*2)
+        self.upsample1_1 = nn.UpsamplingBilinear2d(scale_factor=2)
+        self.op2_1 = ConvUnit(base_channels*4+base_channels*8, base_channels*4)
+        self.upsample2_1 = nn.UpsamplingBilinear2d(scale_factor=2)
+        self.op3_1 = ConvUnit(base_channels*8+base_channels*16, base_channels*8)
+        self.upsample3_1 = nn.UpsamplingBilinear2d(scale_factor=2)
+        
+        self.op0_2 = ConvUnit(base_channels*2+base_channels*2, base_channels)
+        self.upsample0_2 = nn.UpsamplingBilinear2d(scale_factor=2)
+        self.op1_2 = ConvUnit(base_channels*2*2+base_channels*4, base_channels*2)
+        self.upsample1_2 = nn.UpsamplingBilinear2d(scale_factor=2)
+        self.op2_2 = ConvUnit(base_channels*4*2+base_channels*8, base_channels*4)
+        self.upsample2_2 = nn.UpsamplingBilinear2d(scale_factor=2)
+        
+        self.op0_3 = ConvUnit(base_channels*3+base_channels*2, base_channels)
+        self.upsample0_3 = nn.UpsamplingBilinear2d(scale_factor=2)
+        self.op1_3 = ConvUnit(base_channels*2*3+base_channels*4, base_channels*2)
+        self.upsample1_3 = nn.UpsamplingBilinear2d(scale_factor=2)
+        
+        self.op0_4 = ConvUnit(base_channels*4+base_channels*2, base_channels)
+        self.upsample0_4 = nn.UpsamplingBilinear2d(scale_factor=2)
+        
+        # Multi-task
+        self.out_1 = nn.Conv2d(base_channels, num_classes, kernel_size=1, stride=1, padding=0)
+        self.out_2 = nn.Conv2d(base_channels, num_classes, kernel_size=1, stride=1, padding=0)
+        self.out_3 = nn.Conv2d(base_channels, num_classes, kernel_size=1, stride=1, padding=0)
+        self.out_4 = nn.Conv2d(base_channels, num_classes, kernel_size=1, stride=1, padding=0)
 
     def forward(self, x):
+        # Encoder
         x0_0 = self.op0_0(x)
         down_x0_0 = self.maxpool0(x0_0)
         x1_0 = self.op1_0(down_x0_0)
@@ -55,16 +83,41 @@ class UNetPlusPlus(nn.Module):
         x4_0 = self.op4_0(down_x3_0)
         down_x4_0 = self.maxpool4(x4_0)
 
-        print(x0_0.shape, x1_0.shape)
+        # Decoder
+        up_x1_0 = self.upsample0_1(x1_0)
+        x0_1 = self.op0_1(torch.cat([x0_0, up_x1_0], dim=1))
+        up_x2_0 = self.upsample1_1(x2_0)
+        x1_1 = self.op1_1(torch.cat([x1_0, up_x2_0], dim=1))
+        up_x3_0 = self.upsample2_1(x3_0)
+        x2_1 = self.op2_1(torch.cat([x2_0, up_x3_0], dim=1))
+        up_x4_0 = self.upsample3_1(x4_0)
+        x3_1 = self.op3_1(torch.cat([x3_0, up_x4_0], dim=1))
         
+        up_x1_1 = self.upsample0_2(x1_1)
+        x0_2 = self.op0_2(torch.cat([x0_0, x0_1, up_x1_1], dim=1))
+        up_x2_1 = self.upsample1_2(x2_1)
+        x1_2 = self.op1_2(torch.cat([x1_0, x1_1, up_x2_1], dim=1))
+        up_x3_1 = self.upsample2_2(x3_1)
+        x2_2 = self.op2_2(torch.cat([x2_0, x2_1, up_x3_1], dim=1))
+        
+        up_x1_2 = self.upsample0_3(x1_2)
+        x0_3 = self.op0_3(torch.cat([x0_0, x0_1, x0_2, up_x1_2], dim=1))
+        up_x2_2 = self.upsample1_3(x2_2)
+        x1_3 = self.op1_3(torch.cat([x1_0, x1_1, x1_2, up_x2_2], dim=1))
+        
+        up_x1_3 = self.upsample0_4(x1_3)
+        x0_4 = self.op0_4(torch.cat([x0_0, x0_1, x0_2, x0_3, up_x1_3], dim=1))
 
-        # return o, o_softmax
+        # Multi-task
+        x0_1 = self.out_1(x0_1)
+        x0_2 = self.out_2(x0_2)
+        x0_3 = self.out_3(x0_3)
+        x0_4 = self.out_4(x0_4)
 
 
-if __name__ == "__main__":
-    data = torch.randn((1, 1, 224, 224)).cuda()
-    model = UNetPlusPlus(1, 3).cuda()
+        o = (x0_1 + x0_2 + x0_3 + x0_4) / 4
+        o_softmax = nn.Softmax(dim=1)(o)
+        
+        return o, o_softmax
 
-    with torch.no_grad():
-        print(model(data))
 
