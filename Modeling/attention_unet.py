@@ -194,17 +194,3 @@ class AttentionUNet(nn.Module):
         o_softmax = nn.Softmax(dim=1)(o)
         
         return o, o_softmax
-
-
-if __name__ == "__main__":
-    data = torch.randn((1, 1, 256, 256))
-
-    model = AttentionUNet(1, 23)
-
-    data = data.cuda()
-    model = model.cuda()
-
-    with torch.no_grad():
-        result = model(data)
-
-        print(result[1].shape)

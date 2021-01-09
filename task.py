@@ -107,7 +107,7 @@ def test(params, model=None, train_performance=None, epoch=None):
     total_result["DSC"] = [0 for i in range(params["ORGAN_AMOUNT"] + 1)]
     for patient in patient_list:
         patient_folder = os.path.join(test_src_folder, patient)
-        main_image, origin, spacing = read_NiFTI(os.path.join(patient_folder, "image.nii.gz"))
+        main_image, origin, spacing = read_NiFTI(os.path.join(patient_folder, "data.nii.gz"))
         main_label = read_array_from_NiFTI_path(os.path.join(patient_folder, "label.nii.gz"))
         dataloader = [{"image": x, "label": y} for x, y in  zip(main_image, main_label)]
         # Inference
@@ -149,7 +149,7 @@ if __name__ == "__main__":
     params = {}
 
     # Data load settings
-    params["BATCH_SIZE"] = 1
+    params["BATCH_SIZE"] = 2
     params["IF_SHUFFLE"] = True
     params["DATASET_SELECTION"] = "CSTRO"
     params["ROOT_FOLDER"] = "Data/train_flatten"
@@ -171,7 +171,7 @@ if __name__ == "__main__":
     params["CUDA"] = True
     params["START_EPOCH"] = 1
     params["WARM_UP_EPOCHES"] = 1
-    params["TOTAL_EPOCHES"] = 1
+    params["TOTAL_EPOCHES"] = 50
     params["LOSS_TYPE"] = "CROSS_ENTROPY"
     params["MODEL_SELECTION"] = "unet"
     # Other settings
