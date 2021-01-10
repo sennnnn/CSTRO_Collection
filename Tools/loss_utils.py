@@ -32,7 +32,7 @@ class Custom_Cross_Entropy_Loss(object):
 
 
 class Focal_Loss(object):
-    def __init__(self, alpha):
+    def __init__(self, alpha=2):
         self.alpha = alpha
 
     def __call__(self, logit, target):

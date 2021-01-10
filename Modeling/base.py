@@ -71,9 +71,8 @@ def init_weights(net, init_type='normal', gain=0.02):
 
     net.apply(init_func)
 
-flag = 0
+
 def _create_conv_block(block_index, in_channels, out_channels, kernel_size, stride, bn, activation="Mish", init_type="kaiming"):
-    global flag
     block = nn.Sequential()
 
     block.add_module(
@@ -105,12 +104,8 @@ def _create_conv_block(block_index, in_channels, out_channels, kernel_size, stri
     for m in block.modules():
         if isinstance(m, nn.Conv2d):
             init_weights(m, init_type=init_type)
-            flag += 1
-            print(f"{flag} init conv")
         elif isinstance(m, nn.BatchNorm2d):
             init_weights(m, init_type=init_type)
-            flag += 1
-            print(f"{flag} init batchnorm")
 
     return block
 
