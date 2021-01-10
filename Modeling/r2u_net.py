@@ -7,18 +7,15 @@ from Modeling import base
 class R2Block(nn.Module):
     def __init__(self, in_channels, out_channels, n=2):
         super(R2Block, self).__init__()
+        self.conv = base._create_conv_block
         self.n = n
-        self.conv = nn.Sequential(
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False),
-		    nn.BatchNorm2d(out_channels),
-			nn.ReLU(inplace=True)
-        )
+        self.op = self.conv(0, in_channels, out_channels, kernel_size=3, stride=1, bn=1)
 
     def forward(self, x):
         for i in range(self.n):
             if i == 0:
-                o = self.conv(x)
-            o = self.conv(o + x)
+                o = self.op(x)
+            o = self.op(o + x)
 
         return o
 
@@ -169,3 +166,4 @@ class R2UNet(nn.Module):
         o_softmax = nn.Softmax(dim=1)(o)
         
         return o, o_softmax
+

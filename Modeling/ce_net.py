@@ -9,8 +9,12 @@ from Modeling import base
 class DACBlock(nn.Module):
     def __init__(self, in_channels):
         super(DACBlock, self).__init__()
-        self.path_1 = nn.Conv2d(in_channels, in_channels, 3, 1, (3-1)//2, 1)
+        self.conv = base._create_conv_block
+        self.path_1 = nn.Sequential(
+            nn.Conv2d(in_channels, in_channels, 3, 1, (3-1) // 2, 1)
+        )
         self.path_2 = nn.Sequential(
+            nn.Conv2d(in_channels, in_channels, 3, 1, (3-1) // 2, 1),
             nn.Conv2d(in_channels, in_channels, 3, 1, (3+3+1-1) // 2, 3),
             nn.Conv2d(in_channels, in_channels, 1, 1, (1-1) // 2, 1)
         )
@@ -25,7 +29,15 @@ class DACBlock(nn.Module):
             nn.Conv2d(in_channels, in_channels, 3, 1, (5+5+1-1) // 2, 5),
             nn.Conv2d(in_channels, in_channels, 1, 1, (1-1) // 2, 1)
         )
-    
+
+        for m in self.modules():
+            if isinstance(m, nn.Sequential):
+                for sub_m in m.modules():
+                    if isinstance(sub_m, nn.Conv2d):
+                        base.init_weights(sub_m, init_type="kaiming")
+                    elif isinstance(sub_m, nn.BatchNorm2d):
+                        base.init_weights(sub_m, init_type="kaiming")
+        
     def forward(self, x):
         route_1 = self.path_1(x)
         route_2 = self.path_2(x)
@@ -47,6 +59,12 @@ class RMPBlock(nn.Module):
         self.pool4 = nn.MaxPool2d(kernel_size=6, stride=6)
 
         self.conv = nn.Conv2d(in_channels, 1, kernel_size=1, stride=1, padding=0)
+
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                base.init_weights(m, init_type="kaiming")
+            elif isinstance(m, nn.BatchNorm2d):
+                base.init_weights(m, init_type="kaiming")
 
     def forward(self, x):
         h, w = x.shape[-2], x.shape[-1]

@@ -7,18 +7,12 @@ from Modeling import base
 class AttentionGate(nn.Module):
     def __init__(self, gate_channel, signal_channel, middle_channel=None):
         super(AttentionGate, self).__init__()
-        self.register_block_method()
-
+        self.conv = base._create_conv_block
         self.projection_gate = self.conv(0, gate_channel, middle_channel, 1, 1, True)
         self.projection_signal = self.conv(1, signal_channel, middle_channel, 1, 1, True)
         self.projection_mask = self.conv(2, middle_channel, 1, 1, 1, True)
         self.relu = nn.ReLU(inplace=True)
-        self.sigmoid = nn.Sigmoid()
-
-    def register_block_method(self):
-        self.conv = base._create_conv_block
-        self.maxpool = base._create_maxpool_block
-        self.upsample = base._create_upsample_block 
+        self.sigmoid = nn.Sigmoid() 
 
     def forward(self, gate, signal):
         raw_signal = signal
@@ -194,3 +188,4 @@ class AttentionUNet(nn.Module):
         o_softmax = nn.Softmax(dim=1)(o)
         
         return o, o_softmax
+

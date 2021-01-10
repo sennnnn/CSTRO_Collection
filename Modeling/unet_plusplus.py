@@ -1,19 +1,19 @@
 import torch
 import torch.nn as nn
 
+from Modeling import base
+
 
 class ConvUnit(nn.Module):
-    def __init__(self, in_channels, out_channels, n=2, kernel_size=3, stride=1, padding=1):
+    def __init__(self, in_channels, out_channels, n=2, kernel_size=3, stride=1):
         super(ConvUnit, self).__init__()
         self.block_list = nn.ModuleList()
+        self.conv = base._create_conv_block
 
         for i in range(n):
-            conv = nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
-                nn.BatchNorm2d(out_channels),
-                nn.ReLU(inplace=True))
+            op = self.conv(i, in_channels, out_channels, kernel_size=kernel_size, stride=stride, bn=1)
             in_channels = out_channels
-            self.block_list.append(conv)
+            self.block_list.append(op)
 
     def forward(self, x):
         for i in range(len(self.block_list)):
@@ -70,6 +70,12 @@ class UNetPlusPlus(nn.Module):
         self.out_3 = nn.Conv2d(base_channels, num_classes, kernel_size=1, stride=1, padding=0)
         self.out_4 = nn.Conv2d(base_channels, num_classes, kernel_size=1, stride=1, padding=0)
 
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                base.init_weights(m, init_type='kaiming')
+            elif isinstance(m, nn.BatchNorm2d):
+                base.init_weights(m, init_type='kaiming')
+
     def forward(self, x):
         # Encoder
         x0_0 = self.op0_0(x)
@@ -119,5 +125,6 @@ class UNetPlusPlus(nn.Module):
         o_softmax = nn.Softmax(dim=1)(o)
         
         return o, o_softmax
+
 
 

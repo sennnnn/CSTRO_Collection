@@ -1,21 +1,18 @@
 import torch
 import torch.nn as nn
 
-import base
+from Modeling import base
 
 
 class DownStage(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(DownStage, self).__init__()
-        self.register_block_method()
+        self.conv = base._create_conv_block
         self.main_block = nn.Sequential(
             self.conv(0, in_channels,  out_channels, kernel_size=1, stride=1, bn=1),
             self.conv(1, out_channels, out_channels, kernel_size=3, stride=1, bn=1),
             self.conv(2, out_channels, out_channels, kernel_size=3, stride=1, bn=1)
         )
-
-    def register_block_method(self):
-        self.conv = base._create_conv_block
 
     def forward(self, x):
         o = self.main_block(x)
@@ -26,15 +23,12 @@ class DownStage(nn.Module):
 class MiddleStage(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(MiddleStage, self).__init__()
-        self.register_block_method()
+        self.conv = base._create_conv_block
         self.main_block = nn.Sequential(
             self.conv(0, in_channels,  out_channels, kernel_size=1, stride=1, bn=1),
             self.conv(1, out_channels, out_channels, kernel_size=3, stride=1, bn=1),
             self.conv(2, out_channels, out_channels, kernel_size=3, stride=1, bn=1)
         )
-
-    def register_block_method(self):
-        self.conv = base._create_conv_block
 
     def forward(self, x):
         o = self.main_block(x)
@@ -45,16 +39,13 @@ class MiddleStage(nn.Module):
 class UpStage(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(UpStage, self).__init__()
-        self.register_block_method()
+        self.conv = base._create_conv_block
         self.reduce_channel = self.conv(0, in_channels, out_channels, kernel_size=1, stride=1, bn=1)
         self.integration    = self.conv(1, in_channels, out_channels, kernel_size=1, stride=1, bn=1)
         self.main_block = nn.Sequential(
             self.conv(2, out_channels, out_channels, kernel_size=3, stride=1, bn=1),
             self.conv(3, out_channels, out_channels, kernel_size=3, stride=1, bn=1),
         )
-
-    def register_block_method(self):
-        self.conv = base._create_conv_block
 
     def forward(self, x, route):
         o = self.reduce_channel(x)
@@ -236,9 +227,7 @@ class WNet(nn.Module):
 
         ## down stage 3
         o = self.block_list[block_i](o); block_i += 1
-        print(o.shape, out_3.shape)
         o = torch.cat([o, out_3], dim=1)
-        print(o.shape)
         o = self.block_list[block_i](o); block_i += 1
         route_stage_3 = o
         o = self.block_list[block_i](o); block_i += 1

@@ -15,6 +15,17 @@ class SEBlock(nn.Module):
             nn.Sigmoid(),
         )
 
+        for m in self.modules():
+            if isinstance(m, nn.Sequential):
+                for sub_m in m.modules():
+                    if isinstance(sub_m, nn.Conv2d):
+                        base.init_weights(sub_m, init_type="kaiming")
+                    elif isinstance(sub_m, nn.BatchNorm2d):
+                        base.init_weights(sub_m, init_type="kaiming")
+                    elif isinstance(sub_m, nn.Linear):
+                        base.init_weights(sub_m, init_type="kaiming")
+
+
     def forward(self, x):
         sq_info = self.sq(x)
         sq_info = torch.flatten(sq_info, start_dim=1, end_dim=-1)
@@ -182,3 +193,11 @@ class SEUNet(nn.Module):
         o_softmax = nn.Softmax(dim=1)(o)
         
         return o, o_softmax
+
+if __name__ == "__main__":
+    data = torch.randn((1, 1, 224, 224)).cuda()
+    model = SEUNet(1, 23).cuda()
+
+    with torch.no_grad():
+        print(model(data)[0].shape)
+        torch.save(model, "1.pth")

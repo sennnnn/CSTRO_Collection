@@ -24,8 +24,7 @@ def train(params):
     # Inference Related Things
     model        = construct_model(params)
     loss         = construct_loss(params)
-    optimizer    = torch.optim.SGD([{"params": model.parameters(), "lr": params["LR"]}], \
-                                        momentum=0.9, weight_decay=5e-4, nesterov=False)
+    optimizer    = torch.optim.Adam([{"params": model.parameters(), "lr": params["LR"]}])
     lr_scheduler = LrScheduler("poly", params["LR"], params["TOTAL_EPOCHES"], total_step_per_epoch, params["WARM_UP_EPOCHES"])
     # Ckpt Tools
     save_tool    = Saver(params["BACKUP_PATH"], params["CUSTOM_KEY"], params["LOSS_TYPE"], "best")    
@@ -149,14 +148,14 @@ if __name__ == "__main__":
     params = {}
 
     # Data load settings
-    params["BATCH_SIZE"] = 2
+    params["BATCH_SIZE"] = 4
     params["IF_SHUFFLE"] = True
     params["DATASET_SELECTION"] = "CSTRO"
     params["ROOT_FOLDER"] = "Data/train_flatten"
     params["TEST_SRC_FOLDER"] = "Data/test"
     # Data augmentation settings
-    params["CROP_RATE"] = (0.25, 0.75, 0.25, 0.75)
-    params["INPUT_SIZE"] = (384, 384)
+    params["CROP_RATE"] = (0.3125, 0.75, 0.3125, 0.75)
+    params["INPUT_SIZE"] = (224, 224)
     params["WINDOW_CENTER"] = 50
     params["WINDOW_WIDTH"] = 350
     params["ROTATE_ANGEL"] = 15
@@ -171,8 +170,8 @@ if __name__ == "__main__":
     params["CUDA"] = True
     params["START_EPOCH"] = 1
     params["WARM_UP_EPOCHES"] = 1
-    params["TOTAL_EPOCHES"] = 50
-    params["LOSS_TYPE"] = "CROSS_ENTROPY"
+    params["TOTAL_EPOCHES"] = 100
+    params["LOSS_TYPE"] = "FOCAL"
     params["MODEL_SELECTION"] = "unet"
     # Other settings
     params["GPU_VALID_NUMBER"] = "0"
