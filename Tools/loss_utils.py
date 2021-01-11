@@ -31,20 +31,36 @@ class Custom_Cross_Entropy_Loss(object):
         return loss_value
 
 
-class Focal_Loss(object):
-    def __init__(self, alpha=2):
-        self.alpha = alpha
+# class Focal_Loss(object):
+#     def __init__(self, alpha=2):
+#         self.alpha = alpha
 
-    def __call__(self, logit, target):
-        n, c, h, w = logit.size()
-        target = F.one_hot(target.long(), c).permute(0, 3, 1, 2)
-        logit = F.softmax(logit, dim=1)
+#     def __call__(self, logit, target):
+#         n, c, h, w = logit.size()
+#         target = F.one_hot(target.long(), c).permute(0, 3, 1, 2)
+#         logit = F.softmax(logit, dim=1)
         
-        focal_entropy = -1*torch.pow(1-logit, self.alpha)*target*torch.log(logit)
+#         focal_entropy = -1*torch.pow(1-logit, self.alpha)*target*torch.log(logit)
 
-        loss_value = torch.mean(torch.sum(focal_entropy, dim=1))
+#         loss_value = torch.mean(torch.sum(focal_entropy, dim=1))
 
-        return loss_value
+#         return loss_value
+
+
+class Focal_Loss(nn.Module):
+    def __init__(self, alpha=0.5, gamma=2, weight=None, ignore_index=255):
+        super().__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+        self.weight = weight
+        self.ignore_index = ignore_index
+        self.ce_fn = nn.CrossEntropyLoss(weight=self.weight, ignore_index=self.ignore_index)
+
+    def forward(self, preds, labels):
+        logpt = -self.ce_fn(preds, labels)
+        pt = torch.exp(logpt)
+        loss = -((1 - pt) ** self.gamma) * self.alpha * logpt
+        return loss
 
 
 class Dice_Loss(object):
@@ -95,7 +111,7 @@ def construct_loss(params):
     if which == "CROSS_ENTROPY":
         return Cross_Entropy_Loss()
     elif which == "FOCAL":
-        return Focal_Loss(params["FOCAL_ALPHA"])
+        return Focal_Loss()
     elif which == "DICE":
         return Dice_Loss(params["DICE_EPSILON"])
     elif which == "LOG_COSH_DICE":

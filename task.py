@@ -164,6 +164,8 @@ if __name__ == "__main__":
     params["IN_CHANNELS"] = 1
     params["ORGAN_AMOUNT"] = 22
     params["BASE_CHANNELS"] = 64
+    # Loss settings
+    params["FOCAL_ALPHA"] = 2
     # Task settings
     params["TASK"] = "train"
     params["LR"] = 0.001
