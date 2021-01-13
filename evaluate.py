@@ -1,7 +1,6 @@
 import os
 import json
 import shutil
-import settings
 import argparse
 
 import numpy as np
@@ -14,35 +13,38 @@ def evaluate(model_name, ground_truth_folder, metric_name="DSC", backup_path="Ba
     model_backup_path = "{}/{}".format(backup_path, model_name)
 
     path_list = os.listdir(model_backup_path)
+    pth_list = [x for x in path_list if os.path.splitext(x)[1] == ".pth" ]
+    pth_list = sorted(pth_list, key=lambda x: float(x.split("@")[1].split("_")[1]), reverse=True)
     folder_list = [x for x in path_list if os.path.isdir(os.path.join(model_backup_path, x))]
-    folder_list = sorted(folder_list, key=lambda x: int(x.split("@")[1].split("_")[0]), reverse=True)
+    # folder_list = sorted(folder_list, key=lambda x: int(x.split("@")[1].split("_")[0]), reverse=True)
 
-    assert len(folder_list) != 0
+    assert len(pth_list) != 0
 
-    best_model_epoch = folder_list[0].split("@")[1].split("_")[0]
-    best_model_test_result_folder = os.path.join(model_backup_path, folder_list[0])
-    test_patient_list = parse_list(settings.TEST_PATIENT_LIST_PATH)
+    best_model_epoch = pth_list[0].split("@")[1].split("_")[0]
+    best_model_test_result_folder = [x for x in folder_list if x.split("@")[1].split("_")[0] == best_model_epoch]
+    best_model_test_result_folder = os.path.join(model_backup_path, best_model_test_result_folder[0])
+    test_patient_list = os.listdir(ground_truth_folder)
 
     result_storage_folder = "Material/Result/Json/"
 
     if not os.path.exists(result_storage_folder):
         os.makedirs(result_storage_folder, 0o777)
 
-    result_storage_path = f"{result_storage_folder}/{key_word}@{best_model_epoch}.json"
+    result_storage_path = f"{result_storage_folder}/{model_name}@{best_model_epoch}.json"
     if os.path.exists(result_storage_path):
         fp = open(result_storage_path, "r")
         metric = json.load(fp)
     else:
         metric = {}
 
-    collect = {i: [] for i in range(1, 6)}
+    collect = {i: [] for i in range(1, 23)}
 
     for patient in test_patient_list:
         if patient not in metric.keys():
             metric[patient] = {}
         metric[patient][metric_name] = []
         predict_patient_folder = os.path.join(best_model_test_result_folder, patient)
-        label_patient_folder = os.path.join(ground_truth_folder, patient, mri_sequence_list[0])
+        label_patient_folder = os.path.join(ground_truth_folder, patient)
         predict_path = os.path.join(predict_patient_folder, "label.nii.gz")
         ground_truth_path = os.path.join(label_patient_folder, "label.nii.gz")
 
@@ -52,7 +54,7 @@ def evaluate(model_name, ground_truth_folder, metric_name="DSC", backup_path="Ba
 
         string = "{:<14} ".format(patient)
 
-        for i in range(1, 6):
+        for i in range(1, 23):
             organ_predict_array = (predict_array == i).astype(np.uint8)
             organ_ground_truth_array = (ground_truth_array == i).astype(np.uint8)
             if metric_name == "DSC":
@@ -87,6 +89,27 @@ def evaluate(model_name, ground_truth_folder, metric_name="DSC", backup_path="Ba
 
     with open(result_storage_path, "w") as fp:
         fp.write(json.dumps(metric, indent=4))
+
+
+def collect_training_validation_curves(model_name, backup_folder):
+    model_backup_path = "{}/{}".format(backup_path, model_name)
+
+    result_storage_folder = "Material/Result/Txt"
+
+    with open(f"{result_storage_folder}/{model_name}_validation.txt", mode="w") as fp:
+        item_list = os.listdir(model_backup_path)
+        json_list = [x for x in item_list if os.path.splitext(x)[1] == ".json"]
+        json_list = sorted(json_list, key = lambda x: int(x.split("@")[1].split("_")[0]))
+
+        metric_collect = []
+        for item in json_list:
+            item_path = os.path.join(model_backup_path, item)
+            
+            with open(item_path, "r") as f:
+                metric = json.load(f)
+            
+            fp.write(f"{metric["Average"][0]} ")
+            metric_collect.append(metric["Average"][0])
 
 
 if __name__ == "__main__":

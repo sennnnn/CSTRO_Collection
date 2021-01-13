@@ -63,12 +63,14 @@ class MiddleStage(nn.Module):
 
 
 class UpStage(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, if_attention=False):
         super(UpStage, self).__init__()
+        self.if_attention = if_attention
         self.conv = base._create_conv_block
         self.reduce_channel = self.conv(0, in_channels, out_channels, kernel_size=1, stride=1, bn=1)
         self.integration    = self.conv(1, in_channels, out_channels, kernel_size=1, stride=1, bn=1)
-        self.attention = AttentionGate(out_channels, out_channels, out_channels // 2)
+        if if_attention:
+            self.attention = AttentionGate(out_channels, out_channels, out_channels // 2)
         self.main_block = nn.Sequential(
             self.conv(2, out_channels, out_channels, kernel_size=3, stride=1, bn=1),
             self.conv(3, out_channels, out_channels, kernel_size=3, stride=1, bn=1),
@@ -76,7 +78,8 @@ class UpStage(nn.Module):
 
     def forward(self, x, route):
         o = self.reduce_channel(x)
-        o = self.attention(route, o)
+        if self.if_attention:
+            o = self.attention(route, o)
         o = torch.cat([o, route], dim=1)
         o = self.integration(o)
 
@@ -210,16 +213,16 @@ class AttentionWNet(nn.Module):
         self.register_block(MiddleStage(base_channels*16*2, base_channels*16))
         # Second U up stage 4
         self.register_block(self.upsample(self.block_i, stride=2))
-        self.register_block(UpStage(base_channels*16, base_channels*8))
+        self.register_block(UpStage(base_channels*16, base_channels*8, True))
         # Second U up stage 3
         self.register_block(self.upsample(self.block_i, stride=2))
-        self.register_block(UpStage(base_channels*8, base_channels*4))
+        self.register_block(UpStage(base_channels*8, base_channels*4, True))
         # Second U up stage 2
         self.register_block(self.upsample(self.block_i, stride=2))
-        self.register_block(UpStage(base_channels*4, base_channels*2))
+        self.register_block(UpStage(base_channels*4, base_channels*2, True))
         # Second U up stage 1
         self.register_block(self.upsample(self.block_i, stride=2))
-        self.register_block(UpStage(base_channels*2, base_channels))
+        self.register_block(UpStage(base_channels*2, base_channels, True))
         
         # output layer
         self.register_block(self.conv(self.block_i, base_channels, num_classes, kernel_size=1, stride=1, bn=0, activation=None))
