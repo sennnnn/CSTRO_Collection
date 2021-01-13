@@ -3,6 +3,7 @@ import json
 import shutil
 import argparse
 
+import pandas as pd
 import numpy as np
 
 from Tools.metric_utils import calculate_surface_distances, JSC, DSC
@@ -96,6 +97,9 @@ def collect_training_validation_curves(model_name, backup_path):
 
     result_storage_folder = "Material/Training/Json"
 
+    if not os.path.exists(f"{result_storage_folder}/{model_name}"):
+        os.makedirs(f"{result_storage_folder}/{model_name}", 0o777)
+
     collect = {}
     # with open(f"{result_storage_folder}/{model_name}_validation.txt", mode="w") as fp:
     item_list = os.listdir(model_backup_path)
@@ -108,14 +112,14 @@ def collect_training_validation_curves(model_name, backup_path):
         count += 1
         with open(item_path, "r") as f:
             metric = json.load(f)
-            collect[count] = metric['Average'][0]
+            collect[count] = metric['Average']['DSC'][0]
     
-    with open(f"{result_storage_folder}/{model_name}_validation.json", mode="w") as fp:
+    with open(f"{result_storage_folder}/{model_name}/{model_name}_validation.json", mode="w") as fp:
         fp.write(json.dumps(collect, indent=4))
 
     collect = {}
-    csv_path = [x for x in item_list if os.path.exists(x)[1] == ".csv"][0]
-    csv_path = os.path.join(result_storage_folder, csv_path)
+    csv_path = [x for x in item_list if os.path.splitext(x)[1] == ".csv"][0]
+    csv_path = os.path.join(model_backup_path, csv_path)
 
     csv = pd.read_csv(csv_path)
     epoch_list = list(set(csv["Epoch"]))
@@ -123,7 +127,7 @@ def collect_training_validation_curves(model_name, backup_path):
     for epoch in epoch_list:
         collect[epoch] = np.average(np.array(csv["Loss"][csv["Epoch"] == epoch]))
 
-    with open(f"{result_storage_folder}/{model_name}_training.json", mode="w") as fp:
+    with open(f"{result_storage_folder}/{model_name}/{model_name}_training.json", mode="w") as fp:
         fp.write(json.dumps(collect, indent=4))
 
 
