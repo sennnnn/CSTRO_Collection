@@ -91,25 +91,40 @@ def evaluate(model_name, ground_truth_folder, metric_name="DSC", backup_path="Ba
         fp.write(json.dumps(metric, indent=4))
 
 
-def collect_training_validation_curves(model_name, backup_folder):
+def collect_training_validation_curves(model_name, backup_path):
     model_backup_path = "{}/{}".format(backup_path, model_name)
 
-    result_storage_folder = "Material/Result/Txt"
+    result_storage_folder = "Material/Training/Json"
 
-    with open(f"{result_storage_folder}/{model_name}_validation.txt", mode="w") as fp:
-        item_list = os.listdir(model_backup_path)
-        json_list = [x for x in item_list if os.path.splitext(x)[1] == ".json"]
-        json_list = sorted(json_list, key = lambda x: int(x.split("@")[1].split("_")[0]))
+    collect = {}
+    # with open(f"{result_storage_folder}/{model_name}_validation.txt", mode="w") as fp:
+    item_list = os.listdir(model_backup_path)
+    json_list = [x for x in item_list if os.path.splitext(x)[1] == ".json"]
+    json_list = sorted(json_list, key = lambda x: int(x.split("@")[1].split("_")[0]))
 
-        metric_collect = []
-        for item in json_list:
-            item_path = os.path.join(model_backup_path, item)
-            
-            with open(item_path, "r") as f:
-                metric = json.load(f)
-            
-            fp.write(f"{metric["Average"][0]} ")
-            metric_collect.append(metric["Average"][0])
+    count = 0
+    for item in json_list:
+        item_path = os.path.join(model_backup_path, item)
+        count += 1
+        with open(item_path, "r") as f:
+            metric = json.load(f)
+            collect[count] = metric['Average'][0]
+    
+    with open(f"{result_storage_folder}/{model_name}_validation.json", mode="w") as fp:
+        fp.write(json.dumps(collect, indent=4))
+
+    collect = {}
+    csv_path = [x for x in item_list if os.path.exists(x)[1] == ".csv"][0]
+    csv_path = os.path.join(result_storage_folder, csv_path)
+
+    csv = pd.read_csv(csv_path)
+    epoch_list = list(set(csv["Epoch"]))
+
+    for epoch in epoch_list:
+        collect[epoch] = np.average(np.array(csv["Loss"][csv["Epoch"] == epoch]))
+
+    with open(f"{result_storage_folder}/{model_name}_training.json", mode="w") as fp:
+        fp.write(json.dumps(collect, indent=4))
 
 
 if __name__ == "__main__":
@@ -118,9 +133,12 @@ if __name__ == "__main__":
     parser.add_argument("--model_name", type=str, default=None)
     parser.add_argument("--test_folder", type=str, default=r"Data/test")
     parser.add_argument("--metric_name", type=str, default=None)
+    parser.add_argument("--validation_extraction", type=bool, default=False)
 
     args = parser.parse_args()
 
-    evaluate(args.model_name, args.test_folder, args.metric_name, "Backup")
-
+    if args.validation_extraction:
+        collect_training_validation_curves(args.model_name, "Backup")
+    else:
+        evaluate(args.model_name, args.test_folder, args.metric_name, "Backup")
     

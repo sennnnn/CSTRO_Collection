@@ -57,7 +57,7 @@ class Focal_Loss(nn.Module):
         self.ce_fn = nn.CrossEntropyLoss(weight=self.weight, ignore_index=self.ignore_index)
 
     def forward(self, logit, target):
-        logpt = -self.ce_fn(logit, target.long())                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         t, target.long())
+        logpt = -self.ce_fn(logit, target.long())
         pt = torch.exp(logpt)
         loss = -((1 - pt) ** self.gamma) * self.alpha * logpt
         return loss
